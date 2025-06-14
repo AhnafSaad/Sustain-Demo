@@ -24,7 +24,7 @@ const Home = () => {
 
   const handleFeatureClick = (feature) => {
     toast({
-      title: `🚧 ${feature} feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀`,
+      title: `🚧 ${feature} feature isn't implemented yet! 🚀`,
     });
   };
 
