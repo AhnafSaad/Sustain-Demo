@@ -1,0 +1,135 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 120 50% 98%; /* Lighter green-tinted white */
+  --foreground: 120 10% 15%; /* Dark green-gray */
+  --card: 120 50% 96%; /* Slightly darker green-tinted white */
+  --card-foreground: 120 10% 15%;
+  --popover: 120 50% 98%;
+  --popover-foreground: 120 10% 15%;
+  --primary: 142 76% 36%; /* Vibrant Green */
+  --primary-foreground: 120 50% 98%; /* Light color for text on primary */
+  --secondary: 120 30% 90%; /* Light green-gray */
+  --secondary-foreground: 120 10% 15%;
+  --muted: 120 30% 92%; /* Very light green-gray */
+  --muted-foreground: 120 10% 45%; /* Medium green-gray */
+  --accent: 142 76% 36%; /* Same as primary for now, can be different */
+  --accent-foreground: 120 50% 98%;
+  --destructive: 0 84% 60%; /* Red for errors */
+  --destructive-foreground: 0 0% 98%; /* Light text on destructive */
+  --border: 120 30% 85%; /* Light green-gray border */
+  --input: 120 30% 85%; /* Light green-gray input background */
+  --ring: 142 76% 36%; /* Green for focus rings */
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 120 10% 8%; /* Very dark green-desaturated */
+  --foreground: 120 50% 90%; /* Light green-tinted gray */
+  --card: 120 10% 10%; /* Darker green-desaturated */
+  --card-foreground: 120 50% 90%;
+  --popover: 120 10% 8%;
+  --popover-foreground: 120 50% 90%;
+  --primary: 142 76% 36%; /* Vibrant Green (same as light) */
+  --primary-foreground: 120 50% 98%;
+  --secondary: 120 10% 15%; /* Dark green-gray */
+  --secondary-foreground: 120 50% 90%;
+  --muted: 120 10% 15%;
+  --muted-foreground: 120 50% 60%; /* Lighter green-gray for muted text */
+  --accent: 142 76% 36%;
+  --accent-foreground: 120 50% 98%;
+  --destructive: 0 70% 40%; /* Darker red */
+  --destructive-foreground: 0 0% 98%;
+  --border: 120 10% 15%;
+  --input: 120 10% 15%;
+  --ring: 142 76% 36%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  border-color: hsl(var(--border));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  overflow-x: hidden; /* Prevents horizontal scroll */
+}
+
+.eco-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(150, 65%, 45%) 50%, hsl(160, 70%, 40%) 100%);
+}
+
+.nature-pattern {
+  background-image: 
+    radial-gradient(circle at 25% 25%, hsla(var(--primary), 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, hsla(var(--primary), 0.08) 0%, transparent 50%);
+  background-size: 100px 100px;
+}
+
+.leaf-shadow {
+  box-shadow: 0 8px 20px -4px hsla(var(--primary), 0.15), 0 4px 8px -3px hsla(var(--primary), 0.1);
+}
+
+.leaf-shadow-hover:hover {
+   box-shadow: 0 12px 30px -6px hsla(var(--primary), 0.25), 0 8px 15px -5px hsla(var(--primary), 0.15);
+   transform: translateY(-2px);
+}
+
+.glass-effect {
+  background: hsla(var(--background), 0.7); /* Adjusted for theme */
+  backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid hsla(var(--border), 0.5);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+  will-change: transform; /* Optimize for animation */
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 hsla(var(--primary), 0.7); }
+  70% { box-shadow: 0 0 0 10px hsla(var(--primary), 0); }
+}
+
+.pulse-green {
+  animation: pulse-green 2s infinite;
+  will-change: box-shadow; /* Optimize for animation */
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+  display: block; /* remove extra space below images */
+}
+
+@layer utilities {
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px hsla(var(--foreground), 0.1);
+  }
+  .text-shadow-md {
+    text-shadow: 0 2px 4px hsla(var(--foreground), 0.15);
+  }
+  .text-shadow-lg {
+    text-shadow: 0 5px 10px hsla(var(--foreground), 0.2);
+  }
+  .transition-default {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+}
