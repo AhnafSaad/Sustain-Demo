@@ -22,9 +22,9 @@ const Home = () => {
     });
   };
 
-  const handleFeatureClick = (feature) => {
+  const handleFeatureClick = () => {
     toast({
-      title: `🚧 ${feature} feature isn't implemented yet! 🚀`,
+      title: `🚧 ${feature} `,
     });
   };
 

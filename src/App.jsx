@@ -20,6 +20,7 @@ const About = lazy(() => import('@/pages/About'));
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/pages/TermsOfService'));
 const CookiePolicy = lazy(() => import('@/pages/CookiePolicy'));
+const RecyclingPage = lazy(() => import('@/pages/DonationRecycling')); 
 
 const ImpactReport = lazy(() => import('@/pages/sustainability/ImpactReport'));
 const EcoFriendlyMaterials = lazy(() => import('@/pages/sustainability/EcoFriendlyMaterials'));
@@ -60,6 +61,7 @@ function App() {
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/cookie-policy" element={<CookiePolicy />} />
+                  <Route path="/recycling" element={<RecyclingPage />} />
                   
                   <Route path="/sustainability/impact-report" element={<ImpactReport />} />
                   <Route path="/sustainability/eco-friendly-materials" element={<EcoFriendlyMaterials />} />

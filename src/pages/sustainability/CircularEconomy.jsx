@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Recycle, RefreshCw, Settings, ArrowLeft, Package, PackageOpen, Cog, Repeat, CheckCircle } from 'lucide-react';
+import { Recycle, RefreshCw, Settings, ArrowLeft, PackageOpen, Cog, Repeat, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';

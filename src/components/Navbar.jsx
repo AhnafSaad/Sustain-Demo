@@ -1,7 +1,7 @@
 import React, { useState, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, User, Menu, X, Leaf, Search, Zap, ChevronDown } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Leaf, Search, Zap, ChevronDown, Recycle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -69,11 +69,14 @@ const Navbar = memo(() => {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             <Link to="/" className="text-gray-700 hover:text-green-600 transition-colors">Home</Link>
             <Link to="/products" className="text-gray-700 hover:text-green-600 transition-colors">Products</Link>
             <Link to="/sustainability" className="text-gray-700 hover:text-green-600 transition-colors flex items-center">
                <Zap className="w-4 h-4 mr-1 text-green-500" /> Sustainability
+            </Link>
+            <Link to="/recycling" className="text-gray-700 hover:text-green-600 transition-colors flex items-center">
+               <Recycle className="w-4 h-4 mr-1 text-green-500" /> Recycling
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -158,6 +161,9 @@ const Navbar = memo(() => {
               <Link to="/products" className="text-gray-700 hover:text-green-600 transition-colors" onClick={closeMenu}>Products</Link>
               <Link to="/sustainability" className="text-gray-700 hover:text-green-600 transition-colors flex items-center" onClick={closeMenu}>
                 <Zap className="w-4 h-4 mr-1 text-green-500" /> Sustainability
+              </Link>
+              <Link to="/recycling" className="text-gray-700 hover:text-green-600 transition-colors flex items-center" onClick={closeMenu}>
+                <Recycle className="w-4 h-4 mr-1 text-green-500" /> Recycling
               </Link>
               <span className="text-gray-500 text-sm pl-2">Categories:</span>
               {categories.map(category => (

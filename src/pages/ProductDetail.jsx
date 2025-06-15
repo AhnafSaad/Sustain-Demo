@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Star, Heart, Share2, ArrowLeft, Check, Truck, Shield, Recycle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,14 +9,47 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useCart } from '@/contexts/CartContext';
 import { getProductById } from '@/data/products';
 import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [reviews, setReviews] = useState([]);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewName, setReviewName] = useState(user?.name || '');
+  const [reviewComment, setReviewComment] = useState('');
   
   const product = getProductById(id);
+
+  useEffect(() => {
+    if (product) {
+      const storedReviews = JSON.parse(localStorage.getItem(`reviews_${product.id}`)) || [];
+      setReviews(storedReviews);
+    }
+  }, [product]);
+
+  useEffect(() => {
+    if (user) {
+      setReviewName(user.name);
+    }
+  }, [user]);
 
   if (!product) {
     return (
@@ -43,6 +76,17 @@ const ProductDetail = () => {
     });
   };
 
+  const handleBuyNow = () => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product);
+    }
+    toast({
+      title: "Added to cart! 🛒",
+      description: `${quantity} x ${product.name} added. Proceeding to checkout.`
+    });
+    navigate('/checkout');
+  };
+
   const handleWishlist = () => {
     toast({
       title: "🚧 Wishlist feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
@@ -55,16 +99,74 @@ const ProductDetail = () => {
     });
   };
 
-  const handleReview = () => {
+  const handleSubmitReview = (e) => {
+    e.preventDefault();
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Login Required",
+        description: "Please log in to submit a review."
+      });
+      setShowReviewDialog(false);
+      navigate('/login');
+      return;
+    }
+    if (reviewRating === 0 || !reviewName.trim() || !reviewComment.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Incomplete Review",
+        description: "Please provide a rating, name, and comment."
+      });
+      return;
+    }
+
+    const newReview = {
+      id: Date.now(),
+      name: reviewName,
+      rating: reviewRating,
+      comment: reviewComment,
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      verified: true, 
+      userId: user.id
+    };
+
+    const updatedReviews = [newReview, ...reviews];
+    setReviews(updatedReviews);
+    localStorage.setItem(`reviews_${product.id}`, JSON.stringify(updatedReviews));
+
     toast({
-      title: "🚧 Review feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
+      title: "Review Submitted! 🌱",
+      description: "Thank you for your feedback."
     });
+
+    setShowReviewDialog(false);
+    setReviewRating(0);
+    setReviewComment('');
   };
+
+  const StarRatingInput = ({ rating, setRating }) => {
+    return (
+      <div className="flex space-x-1">
+        {[...Array(5)].map((_, index) => {
+          const starValue = index + 1;
+          return (
+            <Star
+              key={starValue}
+              className={`w-6 h-6 cursor-pointer ${
+                starValue <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+              }`}
+              onClick={() => setRating(starValue)}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -78,7 +180,6 @@ const ProductDetail = () => {
           <span className="text-gray-900">{product.name}</span>
         </motion.div>
 
-        {/* Back Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -94,7 +195,6 @@ const ProductDetail = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Images */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -105,7 +205,7 @@ const ProductDetail = () => {
               <img  
                 className="w-full h-96 object-cover rounded-2xl shadow-lg"
                 alt={product.name}
-               src="https://images.unsplash.com/photo-1683724709712-b68cbb3f0069" />
+               src={product.image || "https://images.unsplash.com/photo-1683724709712-b68cbb3f0069"} />
               <Badge className="absolute top-4 left-4 bg-green-600 text-white">
                 {product.ecoTag}
               </Badge>
@@ -116,9 +216,8 @@ const ProductDetail = () => {
               )}
             </div>
             
-            {/* Thumbnail Images */}
             <div className="grid grid-cols-4 gap-2">
-              {[...Array(4)].map((_, index) => (
+              {[product.image, "https://images.unsplash.com/photo-1589595427524-2ddaf2d43fc9", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=100&h=100&fit=crop", "https://images.unsplash.com/photo-1614632537190-23e4b2e69c88?w=100&h=100&fit=crop"].slice(0,4).map((imgSrc, index) => (
                 <motion.div
                   key={index}
                   whileHover={{ scale: 1.05 }}
@@ -131,13 +230,12 @@ const ProductDetail = () => {
                   <img  
                     className="w-full h-20 object-cover"
                     alt={`${product.name} view ${index + 1}`}
-                   src="https://images.unsplash.com/photo-1589595427524-2ddaf2d43fc9" />
+                   src={imgSrc || "https://images.unsplash.com/photo-1589595427524-2ddaf2d43fc9"} />
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* Product Info */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -184,13 +282,61 @@ const ProductDetail = () => {
                     />
                   ))}
                 </div>
-                <span className="text-gray-600">({product.reviews} reviews)</span>
-                <button 
-                  onClick={handleReview}
-                  className="text-green-600 hover:underline text-sm"
-                >
-                  Write a review
-                </button>
+                <span className="text-gray-600">({reviews.length > 0 ? reviews.length : product.reviews} reviews)</span>
+                <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+                  <DialogTrigger asChild>
+                    <button 
+                      className="text-green-600 hover:underline text-sm"
+                    >
+                      Write a review
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Write a Review for {product.name}</DialogTitle>
+                      <DialogDescription>
+                        Share your thoughts about this product with other customers.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmitReview} className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="rating" className="text-right">
+                          Rating
+                        </Label>
+                        <div className="col-span-3">
+                          <StarRatingInput rating={reviewRating} setRating={setReviewRating} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">
+                          Name
+                        </Label>
+                        <Input
+                          id="name"
+                          value={reviewName}
+                          onChange={(e) => setReviewName(e.target.value)}
+                          className="col-span-3"
+                          disabled={!!user} 
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="comment" className="text-right">
+                          Comment
+                        </Label>
+                        <Textarea
+                          id="comment"
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          className="col-span-3"
+                          placeholder="Tell us more about your experience..."
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">Submit Review</Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               <div className="flex items-center space-x-4">
@@ -208,7 +354,6 @@ const ProductDetail = () => {
               <p className="text-gray-700 leading-relaxed">{product.fullDescription}</p>
             </div>
 
-            {/* Features */}
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-900">Key Features:</h3>
               <div className="grid grid-cols-1 gap-2">
@@ -221,7 +366,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Quantity and Add to Cart */}
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <span className="font-medium text-gray-900">Quantity:</span>
@@ -255,16 +399,13 @@ const ProductDetail = () => {
                   variant="outline"
                   className="border-green-600 text-green-600 hover:bg-green-50 py-3"
                   size="lg"
-                  onClick={() => toast({
-                    title: "🚧 Buy Now feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
-                  })}
+                  onClick={handleBuyNow}
                 >
                   Buy Now
                 </Button>
               </div>
             </div>
 
-            {/* Shipping & Returns */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
                 <Truck className="w-6 h-6 text-green-600" />
@@ -291,7 +432,6 @@ const ProductDetail = () => {
           </motion.div>
         </div>
 
-        {/* Reviews Section */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -302,74 +442,102 @@ const ProductDetail = () => {
           <Card className="p-8">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Customer Reviews</h2>
-                <Button 
-                  onClick={handleReview}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Write a Review
-                </Button>
+                <h2 className="text-2xl font-bold text-gray-900">Customer Reviews ({reviews.length})</h2>
+                <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700 text-white">
+                      Write a Review
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Write a Review for {product.name}</DialogTitle>
+                      <DialogDescription>
+                        Share your thoughts about this product with other customers.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmitReview} className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="rating-modal" className="text-right">
+                          Rating
+                        </Label>
+                        <div className="col-span-3">
+                          <StarRatingInput rating={reviewRating} setRating={setReviewRating} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name-modal" className="text-right">
+                          Name
+                        </Label>
+                        <Input
+                          id="name-modal"
+                          value={reviewName}
+                          onChange={(e) => setReviewName(e.target.value)}
+                          className="col-span-3"
+                          disabled={!!user}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="comment-modal" className="text-right">
+                          Comment
+                        </Label>
+                        <Textarea
+                          id="comment-modal"
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          className="col-span-3"
+                          placeholder="Tell us more about your experience..."
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white">Submit Review</Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                  {
-                    name: 'Alex Johnson',
-                    rating: 5,
-                    date: '2 weeks ago',
-                    comment: 'Absolutely love this product! The quality is outstanding and I feel good knowing it\'s eco-friendly.',
-                    verified: true
-                  },
-                  {
-                    name: 'Maria Garcia',
-                    rating: 4,
-                    date: '1 month ago',
-                    comment: 'Great product, exactly as described. Fast shipping and excellent customer service.',
-                    verified: true
-                  },
-                  {
-                    name: 'David Chen',
-                    rating: 5,
-                    date: '2 months ago',
-                    comment: 'Perfect for my needs. The sustainable materials don\'t compromise on performance at all.',
-                    verified: true
-                  }
-                ].map((review, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="space-y-3 p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < review.rating
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
+              {reviews.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {reviews.map((review) => (
+                    <motion.div
+                      key={review.id}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                      viewport={{ once: true }}
+                      className="space-y-3 p-4 bg-gray-50 rounded-lg shadow"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < review.rating
+                                  ? 'text-yellow-400 fill-current'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {review.verified && (
+                          <Badge variant="outline" className="text-xs border-green-500 text-green-600">
+                            Verified Purchase
+                          </Badge>
+                        )}
                       </div>
-                      {review.verified && (
-                        <Badge variant="outline" className="text-xs">
-                          Verified Purchase
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-gray-700">{review.comment}</p>
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span className="font-medium">{review.name}</span>
-                      <span>{review.date}</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                      <p className="text-gray-700 italic">"{review.comment}"</p>
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span className="font-medium">{review.name}</span>
+                        <span>{review.date}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600 text-center py-4">Be the first to review this product!</p>
+              )}
             </div>
           </Card>
         </motion.div>
