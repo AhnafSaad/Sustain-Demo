@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Gift, Recycle, Heart, MapPin, ExternalLink, ArrowLeft, Send, Edit3, Package, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,6 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const donationPartners = [
   {
@@ -22,21 +26,21 @@ const donationPartners = [
     description: 'Provides job training, employment placement services, and other community-based programs by selling donated clothing and household items.',
     logoAlt: 'Goodwill Logo',
     website: 'https://www.goodwill.org/',
-    imagePlaceholder: 'Organization focused on community support through donations'
+    imagePlaceholder: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDN8fGRvbmF0aW9ufGVufDB8fHx8MTY3ODg5MjUyNA&ixlib=rb-4.0.3&q=80&w=400'
   },
   {
     name: 'TerraCycle',
     description: 'Offers free recycling programs for hard-to-recycle waste streams, turning waste into new products.',
     logoAlt: 'TerraCycle Logo',
     website: 'https://www.terracycle.com/',
-    imagePlaceholder: 'Innovative recycling solutions for complex waste'
+    imagePlaceholder: 'https://images.unsplash.com/photo-1542601906-8e5b6de6052e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDF8fHJlY3ljbGluZ3xlbnwwfHx8fDE2Nzg4OTI1MjQ&ixlib=rb-4.0.3&q=80&w=400'
   },
   {
     name: 'Soles4Souls',
     description: 'Turns unwanted shoes and clothing into opportunity by providing relief, creating jobs and empowering people to break the cycle of poverty.',
     logoAlt: 'Soles4Souls Logo',
     website: 'https://soles4souls.org/',
-    imagePlaceholder: 'Shoes and clothing donation for global impact'
+    imagePlaceholder: 'https://images.unsplash.com/photo-1604176352165-ca343c9d5b1f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDEwfHxzaG9lc3xlbnwwfHx8fDE2Nzg4OTI1MjQ&ixlib=rb-4.0.3&q=80&w=400'
   },
 ];
 
@@ -45,27 +49,50 @@ const recyclingTips = [
     title: 'Clean Your Gear',
     description: 'Ensure items are clean and dry before donating or sending for recycling. This helps processors.',
     icon: Recycle,
-    imageAlt: 'Person cleaning sports shoes before recycling'
+    imageSrc: 'https://images.unsplash.com/photo-1581078426021-392d195123d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDE0fHxjbGVhbmluZ3xlbnwwfHx8fDE2Nzg4OTI1MjU&ixlib=rb-4.0.3&q=80&w=400'
   },
   {
-    title: 'Separate Materials (If Possible)',
+    title: 'Separate Materials',
     description: 'If your gear has easily separable parts (e.g., metal buckles from fabric), separate them for better recycling outcomes.',
     icon: Recycle,
-    imageAlt: 'Hands separating different materials from a sports bag'
+    imageSrc: 'https://images.unsplash.com/photo-1611118495066-886d346c8270?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDI3fHxtYXRlcmlhbHN8ZW58MHx8fHwxNjc4ODkyNTI1&ixlib=rb-4.0.3&q=80&w=400'
   },
   {
     title: 'Check Local Guidelines',
     description: 'Always verify local recycling capabilities. Not all facilities can handle specialized sports materials.',
     icon: MapPin,
-    imageAlt: 'Person checking recycling guidelines on a local council website'
+    imageSrc: 'https://images.unsplash.com/photo-1571987537948-31c19e1a32c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDEyfHxtYXB8ZW58MHx8fHwxNjc4ODkyNTI1&ixlib=rb-4.0.3&q=80&w=400'
   },
 ];
 
-const RecyclingPage = () => {
+const DonationRecyclingPage = () => {
   const { toast } = useToast();
-  const [donationItemName, setDonationItemName] = useState('');
-  const [donationItemCondition, setDonationItemCondition] = useState('');
-  const [donationItemDescription, setDonationItemDescription] = useState('');
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [itemName, setItemName] = useState('');
+  const [itemCondition, setItemCondition] = useState('');
+  const [itemDescription, setItemDescription] = useState('');
+  const [myDonations, setMyDonations] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchMyDonations = async () => {
+    if (!user) return;
+    try {
+      const { data } = await axios.get('/api/donations/mydonations');
+      setMyDonations(data);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not fetch your donation history.',
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchMyDonations();
+  }, [user]);
 
   const handlePartnerWebsiteClick = (url) => {
     if (url && url !== '#') {
@@ -78,9 +105,18 @@ const RecyclingPage = () => {
     }
   };
 
-  const handleDonateProductSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!donationItemName.trim() || !donationItemCondition || !donationItemDescription.trim()) {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "Please log in to submit a donation request."
+      });
+      navigate('/login');
+      return;
+    }
+    if (!itemName.trim() || !itemCondition || !itemDescription.trim()) {
       toast({
         variant: "destructive",
         title: "Incomplete Donation Form",
@@ -88,13 +124,40 @@ const RecyclingPage = () => {
       });
       return;
     }
-    toast({
-      title: "Donation Request Submitted! 💚",
-      description: `Thank you for offering to donate: ${donationItemName}. We'll review your request.`,
-    });
-    setDonationItemName('');
-    setDonationItemCondition('');
-    setDonationItemDescription('');
+    setIsLoading(true);
+    try {
+      // The API endpoint expects itemName and itemDescription. We combine our fields.
+      const fullDescription = `Condition: ${itemCondition}. Description: ${itemDescription}`;
+      await axios.post('/api/donations', { itemName, itemDescription: fullDescription });
+      toast({
+        title: "Donation Request Submitted! 💚",
+        description: `Thank you for offering to donate: ${itemName}. We'll review your request.`,
+      });
+      setItemName('');
+      setItemCondition('');
+      setItemDescription('');
+      fetchMyDonations(); // Refresh the list
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "Could not submit your request. Please try again later."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'Approved':
+        return <Badge variant="success">Approved</Badge>;
+      case 'Disapproved':
+        return <Badge variant="destructive">Disapproved</Badge>;
+      case 'Pending':
+      default:
+        return <Badge variant="secondary">Pending</Badge>;
+    }
   };
 
 
@@ -107,9 +170,9 @@ const RecyclingPage = () => {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <Link to="/">
+          <Link to="/sustainability">
             <Button variant="outline" className="text-green-700 border-green-700 hover:bg-green-100">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Sustainability Hub
             </Button>
           </Link>
         </motion.div>
@@ -121,7 +184,7 @@ const RecyclingPage = () => {
           className="text-center space-y-6 mb-16"
         >
           <div className="flex justify-center items-center">
-            <Recycle className="w-20 h-20 text-emerald-600 float-animation" />
+            <Recycle className="w-20 h-20 text-emerald-600 animate-pulse" />
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900">Recycling & Donations</h1>
           <p className="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
@@ -145,60 +208,105 @@ const RecyclingPage = () => {
               <p className="text-lg text-gray-700 text-center max-w-2xl mx-auto">
                 Have Sustain Sports gear you no longer need? Fill out the form below to initiate a donation. We'll guide you through the process to ensure your items find a deserving new home.
               </p>
-              <motion.form 
-                onSubmit={handleDonateProductSubmit} 
-                className="max-w-xl mx-auto space-y-6 p-6 bg-white rounded-lg shadow-lg border border-emerald-200"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="itemName" className="text-gray-700 font-medium flex items-center">
-                    <Package className="w-4 h-4 mr-2 text-green-600" /> Item Name / Type
-                  </Label>
-                  <Input 
-                    id="itemName" 
-                    placeholder="e.g., Eco-Fit Running Shorts, Size M" 
-                    value={donationItemName}
-                    onChange={(e) => setDonationItemName(e.target.value)}
-                    className="border-gray-300 focus:border-green-500 focus:ring-green-500"
-                  />
+              {user ? (
+                <motion.form 
+                  onSubmit={handleSubmit} 
+                  className="max-w-xl mx-auto space-y-6 p-6 bg-white rounded-lg shadow-lg border border-emerald-200"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="itemName" className="text-gray-700 font-medium flex items-center">
+                      <Package className="w-4 h-4 mr-2 text-green-600" /> Item Name / Type
+                    </Label>
+                    <Input 
+                      id="itemName" 
+                      placeholder="e.g., Eco-Fit Running Shorts, Size M" 
+                      value={itemName}
+                      onChange={(e) => setItemName(e.target.value)}
+                      className="border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="itemCondition" className="text-gray-700 font-medium flex items-center">
+                      <Edit3 className="w-4 h-4 mr-2 text-green-600" /> Item Condition
+                    </Label>
+                    <Select onValueChange={setItemCondition} value={itemCondition}>
+                      <SelectTrigger id="itemCondition" className="w-full border-gray-300 focus:border-green-500 focus:ring-green-500">
+                        <SelectValue placeholder="Select condition" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New">New / Like New (Unused or barely used)</SelectItem>
+                        <SelectItem value="Good">Good (Gently used, minor wear)</SelectItem>
+                        <SelectItem value="Fair">Fair (Visible wear, still functional)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="itemDescription" className="text-gray-700 font-medium flex items-center">
+                      <Heart className="w-4 h-4 mr-2 text-green-600" /> Brief Description / Reason for Donation
+                    </Label>
+                    <Textarea 
+                      id="itemDescription" 
+                      placeholder="e.g., Bought wrong size, item still in great shape." 
+                      value={itemDescription}
+                      onChange={(e) => setItemDescription(e.target.value)}
+                      className="border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg" disabled={isLoading}>
+                    <Send className="w-5 h-5 mr-2" /> {isLoading ? 'Submitting...' : 'Submit Donation Request'}
+                  </Button>
+                </motion.form>
+              ) : (
+                 <div className="text-center p-8 border-2 border-dashed rounded-lg max-w-xl mx-auto">
+                  <p className="mb-4">Please log in to submit a donation request and view your history.</p>
+                  <Button onClick={() => navigate('/login')}>Login to Continue</Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="itemCondition" className="text-gray-700 font-medium flex items-center">
-                    <Edit3 className="w-4 h-4 mr-2 text-green-600" /> Item Condition
-                  </Label>
-                  <Select onValueChange={setDonationItemCondition} value={donationItemCondition}>
-                    <SelectTrigger id="itemCondition" className="w-full border-gray-300 focus:border-green-500 focus:ring-green-500">
-                      <SelectValue placeholder="Select condition" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">New / Like New (Unused or barely used)</SelectItem>
-                      <SelectItem value="good">Good (Gently used, minor wear)</SelectItem>
-                      <SelectItem value="fair">Fair (Visible wear, still functional)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="itemDescription" className="text-gray-700 font-medium flex items-center">
-                    <Heart className="w-4 h-4 mr-2 text-green-600" /> Brief Description / Reason for Donation
-                  </Label>
-                  <Textarea 
-                    id="itemDescription" 
-                    placeholder="e.g., Bought wrong size, item still in great shape." 
-                    value={donationItemDescription}
-                    onChange={(e) => setDonationItemDescription(e.target.value)}
-                    className="border-gray-300 focus:border-green-500 focus:ring-green-500"
-                  />
-                </div>
-                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg">
-                  <Send className="w-5 h-5 mr-2" /> Submit Donation Request
-                </Button>
-              </motion.form>
+              )}
             </CardContent>
           </Card>
         </motion.section>
+
+        {user && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
+            <Card className="leaf-shadow border-green-200">
+              <CardHeader>
+                <CardTitle>Your Donation History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date Submitted</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {myDonations.length > 0 ? (
+                      myDonations.map((donation) => (
+                        <TableRow key={donation._id}>
+                          <TableCell className="font-medium">{donation.itemName}</TableCell>
+                          <TableCell>{getStatusBadge(donation.status)}</TableCell>
+                          <TableCell>{new Date(donation.createdAt).toLocaleDateString()}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan="3" className="text-center h-24">
+                          You haven't submitted any donation requests yet.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         <motion.section
           initial={{ opacity: 0 }}
@@ -227,7 +335,7 @@ const RecyclingPage = () => {
                   >
                     <Card className="h-full flex flex-col p-6 leaf-shadow-hover border-teal-300">
                       <div className="w-full h-40 bg-gray-200 rounded-md mb-4 overflow-hidden">
-                        <img  alt={tip.imageAlt} className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1595872018818-97555653a011" />
+                        <img  alt={tip.title} className="w-full h-full object-cover" src={tip.imageSrc} />
                       </div>
                       <div className="flex items-center text-teal-700 mb-2">
                         <tip.icon className="w-6 h-6 mr-2" />
@@ -269,7 +377,7 @@ const RecyclingPage = () => {
                   >
                     <Card className="h-full flex flex-col items-center text-center p-6 leaf-shadow-hover border-emerald-300">
                       <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mb-4">
-                        <img  alt={partner.logoAlt} className="w-16 h-16 object-contain" src="https://images.unsplash.com/photo-1566304660263-c15041ac11c0" />
+                        <img  alt={partner.logoAlt} className="w-16 h-16 object-contain" src={partner.imagePlaceholder} />
                       </div>
                       <h3 className="text-xl font-semibold text-gray-800 mb-2">{partner.name}</h3>
                       <p className="text-gray-600 flex-grow mb-4">{partner.description}</p>
@@ -309,4 +417,5 @@ const RecyclingPage = () => {
   );
 };
 
-export default RecyclingPage;
+export default DonationRecyclingPage;
+
